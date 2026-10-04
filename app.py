@@ -7,7 +7,7 @@ import math
 st.set_page_config(page_title="مُحوّل الصوت الذكي", layout="centered")
 
 st.title("🎙️ مُحوّل الصوت الذكي (10 دقائق/قسم)")
-st.write("تفريغ المقاطع الصوتية الطويلة (عربي + إنجليزي) بدون انهيار الجوال.")
+st.write("تفريغ المقاطع الصوتية الطويلة (عربي + إنجليزي) عبر الخادم مباشرة.")
 
 # 1. إدخال مفتاح API
 api_key = st.text_input("أدخل مفتاح Gemini API الخاص بك:", type="password")
@@ -23,11 +23,11 @@ if uploaded_file and api_key:
             file_bytes = uploaded_file.getvalue()
             total_size = len(file_bytes)
             
-            # تقطيع الملف ثنائياً بحجم ~10MB (ما يقارب 10 دقائق صوت)
+            # تقطيع الملف ثنائياً بحجم 10MB (ما يقارب 10 دقائق صوت)
             chunk_size = 10 * 1024 * 1024
             num_chunks = math.ceil(total_size / chunk_size)
             
-            st.success(f"تم جاهزية الملف وتقسيمه إلى {num_chunks} أجزاء!")
+            st.success(f"تم إعداد الملف وجاهزيته لـ {num_chunks} أجزاء!")
             
             full_transcription = []
             
@@ -38,7 +38,10 @@ if uploaded_file and api_key:
                 end = min((idx + 1) * chunk_size, total_size)
                 chunk_data = file_bytes[start:end]
                 
-                chunk_path = os.path.join(tmpdir, f"chunk_{idx}.mp3")
+                # استخدام الامتداد الأصلي للملف
+                file_ext = os.path.splitext(uploaded_file.name)[1] or ".m4a"
+                chunk_path = os.path.join(tmpdir, f"chunk_{idx}{file_ext}")
+                
                 with open(chunk_path, "wb") as f:
                     f.write(chunk_data)
                 
@@ -48,7 +51,7 @@ if uploaded_file and api_key:
                     with st.spinner("جاري التفريغ النصي بواسطة Gemini..."):
                         audio_file = client.files.upload(file=chunk_path)
                         
-                        prompt = "قم بتفريغ المقطع الصوتي بدقة إلى نص مكتوب. المقطع يحتوي على لغة عربية مع كلمات إنجليزية فقط (Mixed Arabic and English). اكتب الكلام كما قيل تماماً وبدون أي شروحات إضافة."
+                        prompt = "قم بتفريغ المقطع الصوتي بدقة إلى نص مكتوب. المقطع يحتوي على لغة عربية مع كلمات إنجليزية فقط (Mixed Arabic and English). اكتب الكلام كما قيل تماماً وبدون أي شروحات إضافية."
                         
                         response = client.models.generate_content(
                             model='gemini-1.5-flash',
